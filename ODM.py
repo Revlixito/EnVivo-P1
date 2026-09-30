@@ -138,6 +138,8 @@ class Model:
         #TODO
         # Realizar las comprabociones y gestiones necesarias
         # antes de la asignacion.
+        if(name is not self._admissible_var_) or (value is None):
+            raise AttributeError
 
         # Asigna el valor value a la variable name
         self._data[name] = value
