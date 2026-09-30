@@ -38,7 +38,7 @@ def getLocationPoint(address: str) -> Point:
             #TODO
             # Es necesario proporcionar un user_agent para utilizar la API
             # Utilizar un nombre aleatorio para el user_agent
-            location = Nominatim(user_agent="Harsuk").geocode(address)
+            location = Nominatim(user_agent="Sukhman").geocode(address)
         except GeocoderTimedOut:
             # Puede lanzar una excepcion si se supera el tiempo de espera
             # Volver a intentarlo
@@ -118,7 +118,8 @@ class Model:
         #TODO
         # Realizar las comprabociones y gestiones necesarias
         # antes de la asignacion.
-
+        
+        #Validamos cada argumento recibido
         # Asigna todos los valores en kwargs a las atributos con 
         # nombre las claves en kwargs
         # Utilizamos el atributo data para guardar los variables 
@@ -261,6 +262,20 @@ class Model:
         # <campo>_loc, luego el índice 2dsphere va sobre <campo>_loc, mientras
         # que _location_var debe guardar el nombre del campo base.
 
+        for clave, valor in indexes:
+            if(clave=="unique_indexes"):
+                for i in valor:
+                    cls._db.create_index([(valor)], unique=True)
+
+            elif(clave=="regular_indexes"):
+                for i in valor:
+                    cls._db.create_index([(valor, 1)])
+
+            else:
+                for i in valor:
+                    cls._db.create_index([(valor, "2dsphere")])
+
+
 
 class ModelCursor:
     """ 
@@ -327,18 +342,26 @@ def initApp(definitions_path: str = "./models.yml", mongodb_uri="mongodb://local
     """
     #TODO
     # Inicializar base de datos
+    client = MongoClient(mongodb_uri)
+    db = client[db_name]
 
     #TODO
     # Declarar tantas clases modelo colecciones existan en la base de datos
     # Leer el fichero de definiciones de modelos para obtener las colecciones,
     # indices y los atributos admitidos y requeridos para cada una de ellas.
     # Ejemplo de declaracion de modelo para colecion llamada MiModelo
-    scope["MiModelo"] = type("MiModelo", (Model,),{})
+    with open(definitions_path, "r", encoding="utf-8") as datos:
+        datos = yaml.safe_load(definitions_path) # Leemos el yml con yaml.safe_load para que lo ocnvierta en diccionario de python
+        print( type(datos))
+        
+        for clave, valor in datos.items():
+            scope[clave] = type(clave, (Model,),{})
+
     # La clase se declara en tiempo de ejecucion y queda en scope, que no tiene
     # por que ser el espacio de nombres global: las pruebas le pasan su propio
     # diccionario. Por eso se inicializa a traves de scope y no por su nombre,
     # que ahi todavia no existe.
-    scope["MiModelo"].init_class(db_collection=None, indexes=None, required_vars=None, admissible_vars=None)
+        scope[clave].init_class(db_collection=None, indexes=None, required_vars=None, admissible_vars=None)
 
 if __name__ == '__main__':
     

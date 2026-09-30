@@ -22,9 +22,53 @@ Recinto:
   admissible_vars:
     - zonas
     - servicios
-    - direccion_loc
   unique_indexes:
     - nombre
   regular_indexes:
     - aforo
-  location_index: direccion
+  location_index: 
+    - direccion
+
+Artista:
+  required_vars:
+    - nombre
+    - genero
+  admissible_vars:
+    - pais_origen
+    - anio_inicio
+  unique_indexes:
+    - nombre
+  regular_indexes:
+    - genero
+  location_index:
+    - pais_origen
+
+Evento:
+  required_vars:
+    - titulo
+    - artista
+    - recinto
+    - fecha_hora
+    - precio
+  admissible_vars:
+    - entradas_vendidas
+  unique_indexes:
+    - titulo
+  regular_indexes:
+    - artista
+
+Asistente:
+  required_vars:
+    - nombre
+    - correo
+  admissible_vars:
+    - fecha_de_alta
+    - direccion
+    - preferencias_musical
+  unique_indexes:
+    - correo
+  regular_indexes:
+    - nombre
+    - preferencias_musical
+  location_index:
+    - direccion
