@@ -1,5 +1,5 @@
 __author__ = 'Pablo Ramos Criado'
-__students__ = 'Nombres_y_Apellidos'
+__students__ = 'Iker de la Fuente y Harsukhman Preet Singh Kaur'
 
 
 from geopy.geocoders import Nominatim
@@ -48,6 +48,15 @@ def getLocationPoint(address: str) -> Point:
     # Si no se consiguieron coordenadas, lanzar ValueError: la funcion no puede
     # devolver un punto inventado ni None silenciosamente. Es lo que espera la
     # prueba test_get_location_point_timeout_failure.
+    
+    if(location == None):
+        raise ValueError("No se pudieron obtener coordenadas")
+    
+    punto_json = Point((location.longitude, location.latitude))
+
+    return punto_json
+
+
 
 class Model:
     """ 
@@ -130,6 +139,8 @@ class Model:
         #TODO
         # Realizar las comprabociones y gestiones necesarias
         # antes de la asignacion.
+        if(name is not self._admissible_var_) or (value is None):
+            raise AttributeError
 
         # Asigna el valor value a la variable name
         self._data[name] = value
