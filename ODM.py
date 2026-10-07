@@ -118,6 +118,15 @@ class Model:
         #TODO
         # Realizar las comprabociones y gestiones necesarias
         # antes de la asignacion.
+
+        vars_validos = self._required_vars | self._admissible_vars
+
+        for k in kwargs:
+            if k not in vars_validos:
+                raise AttributeError(f"El atributo '{k}' no es valido")
+
+            if k not in self._required_vars:
+                raise AttributeError(f"El atributo '{k}' no se encuentra")
         
         #Validamos cada argumento recibido
         # Asigna todos los valores en kwargs a las atributos con 
