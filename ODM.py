@@ -262,7 +262,7 @@ class Model:
         # <campo>_loc, luego el índice 2dsphere va sobre <campo>_loc, mientras
         # que _location_var debe guardar el nombre del campo base.
 
-        for clave, valor in indexes:
+        for clave, valor in indexes.items():
             if(clave=="unique_indexes"):
                 for i in valor:
                     cls._db.create_index([(valor)], unique=True)
@@ -351,17 +351,26 @@ def initApp(definitions_path: str = "./models.yml", mongodb_uri="mongodb://local
     # indices y los atributos admitidos y requeridos para cada una de ellas.
     # Ejemplo de declaracion de modelo para colecion llamada MiModelo
     with open(definitions_path, "r", encoding="utf-8") as datos:
-        datos = yaml.safe_load(definitions_path) # Leemos el yml con yaml.safe_load para que lo ocnvierta en diccionario de python
-        print( type(datos))
+        datos = yaml.safe_load(datos) # Leemos el yml con yaml.safe_load para que lo ocnvierta en diccionario de python
+        print(datos)
+        print(type(datos))
         
         for clave, valor in datos.items():
             scope[clave] = type(clave, (Model,),{})
+
+            indexes = {}
+
+            for indice in valor["unique_indexes"]:
+                indexes[indice] = "unique"
+
+            for indice in valor["regular_indexes"]:
+                indexes[indice] = "asc"
 
     # La clase se declara en tiempo de ejecucion y queda en scope, que no tiene
     # por que ser el espacio de nombres global: las pruebas le pasan su propio
     # diccionario. Por eso se inicializa a traves de scope y no por su nombre,
     # que ahi todavia no existe.
-        scope[clave].init_class(db_collection=None, indexes=None, required_vars=None, admissible_vars=None)
+        scope[clave].init_class(db_collection=db[clave], indexes=indexes, required_vars=valor["required_vars"], admissible_vars=valor["admissible_vars"])
 
 if __name__ == '__main__':
     
