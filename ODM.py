@@ -127,7 +127,7 @@ class Model:
             if k not in vars_validos:
                 raise AttributeError(f"El atributo '{k}' no es valido")
 
-            for r in self._required_vars:
+        for r in self._required_vars:
                 if r not in kwargs:
                     raise AttributeError(f"Falta el atributo requerido '{r}'")
         
@@ -394,6 +394,13 @@ def initApp(definitions_path: str = "./models.yml", mongodb_uri="mongodb://local
 
             for indice in valor["regular_indexes"]:
                 indexes[indice] = "asc"
+
+            raw_loc = valor.get("location_index")
+            
+            if isinstance(raw_loc, list) and raw_loc:
+                indexes[raw_loc[0]] = "geosphere"
+            elif isinstance(raw_loc, str):
+                indexes[raw_loc] = "geosphere"
     # La clase se declara en tiempo de ejecucion y queda en scope, que no tiene
     # por que ser el espacio de nombres global: las pruebas le pasan su propio
     # diccionario. Por eso se inicializa a traves de scope y no por su nombre,
