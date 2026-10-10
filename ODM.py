@@ -122,11 +122,14 @@ class Model:
         vars_validos = self._required_vars | self._admissible_vars
 
         for k in kwargs:
+            if k == "_id" or k.endswith("_loc"):
+                continue
             if k not in vars_validos:
                 raise AttributeError(f"El atributo '{k}' no es valido")
 
-            if k not in self._required_vars:
-                raise AttributeError(f"El atributo '{k}' no se encuentra")
+            for r in self._required_vars:
+                if r not in kwargs:
+                    raise AttributeError(f"Falta el atributo requerido '{r}'")
         
         #Validamos cada argumento recibido
         # Asigna todos los valores en kwargs a las atributos con 
@@ -269,7 +272,7 @@ class Model:
         alguna otra inicialización/comprobaciones o cambios adicionales
         que estime el alumno.
 
-        Parameters
+        Parametersb
         ----------
             db_collection : pymongo.collection.Collection
                 Conexion a la collecion de la base de datos.
@@ -281,8 +284,8 @@ class Model:
                 Set de atributos admitidos por el modelo
         """
         cls._db = db_collection
-        cls._required_vars = required_vars
-        cls._admissible_vars = admissible_vars
+        cls._required_vars = set(required_vars)
+        cls._admissible_vars = set(admissible_vars)
         # TODO
         # Recorrer indexes y crear cada índice segun su tipo: 'unique', 'asc'
         # y 'geosphere'. Comparar el tipo por igualdad, no con el operador 'in'.
@@ -291,17 +294,15 @@ class Model:
         # que _location_var debe guardar el nombre del campo base.
 
         for clave, valor in indexes.items():
-            if(clave=="unique_indexes"):
-                for i in valor:
-                    cls._db.create_index([(valor)], unique=True)
+            if(valor =="unique"):
+                cls._db.create_index([(clave, 1)], unique=True)
 
-            elif(clave=="regular_indexes"):
-                for i in valor:
-                    cls._db.create_index([(valor, 1)])
+            elif(valor=="asc"):
+                cls._db.create_index([(clave, 1)])
 
-            else:
-                for i in valor:
-                    cls._db.create_index([(valor, "2dsphere")])
+            elif(valor=="geosphere"):
+                cls._location_var = clave
+                cls._db.create_index([(clave + "_loc", "2dsphere")])
 
 
 
@@ -348,7 +349,9 @@ class ModelCursor:
         Utilizar alive para comprobar si existen mas documentos.
         """
         #TODO
-        pass #No olvidar eliminar esta linea una vez implementado
+        while self.cursor.alive:
+            documento = next(self.cursor)
+            yield self.model(**documento)#No olvidar eliminar esta linea una vez implementado
 
 
 def initApp(definitions_path: str = "./models.yml", mongodb_uri="mongodb://localhost:27017/", db_name="abd", scope=globals()) -> None:
@@ -380,8 +383,6 @@ def initApp(definitions_path: str = "./models.yml", mongodb_uri="mongodb://local
     # Ejemplo de declaracion de modelo para colecion llamada MiModelo
     with open(definitions_path, "r", encoding="utf-8") as datos:
         datos = yaml.safe_load(datos) # Leemos el yml con yaml.safe_load para que lo ocnvierta en diccionario de python
-        print(datos)
-        print(type(datos))
         
         for clave, valor in datos.items():
             scope[clave] = type(clave, (Model,),{})
@@ -393,7 +394,6 @@ def initApp(definitions_path: str = "./models.yml", mongodb_uri="mongodb://local
 
             for indice in valor["regular_indexes"]:
                 indexes[indice] = "asc"
-
     # La clase se declara en tiempo de ejecucion y queda en scope, que no tiene
     # por que ser el espacio de nombres global: las pruebas le pasan su propio
     # diccionario. Por eso se inicializa a traves de scope y no por su nombre,
