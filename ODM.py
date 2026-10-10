@@ -35,7 +35,7 @@ def getLocationPoint(address: str) -> Point:
         intentos += 1
         try:
             time.sleep(1)
-            #TODO
+            #TODO DONE
             # Es necesario proporcionar un user_agent para utilizar la API
             # Utilizar un nombre aleatorio para el user_agent
             location = Nominatim(user_agent="Sukhman").geocode(address)
@@ -43,7 +43,7 @@ def getLocationPoint(address: str) -> Point:
             # Puede lanzar una excepcion si se supera el tiempo de espera
             # Volver a intentarlo
             continue
-    #TODO
+    #TODO DONE
     # Devolver un GeoJSON de tipo punto con la latitud y longitud almacenadas.
     # Si no se consiguieron coordenadas, lanzar ValueError: la funcion no puede
     # devolver un punto inventado ni None silenciosamente. Es lo que espera la
@@ -118,6 +118,15 @@ class Model:
         #TODO
         # Realizar las comprabociones y gestiones necesarias
         # antes de la asignacion.
+
+        vars_validos = self._required_vars | self._admissible_vars
+
+        for k in kwargs:
+            if k not in vars_validos:
+                raise AttributeError(f"El atributo '{k}' no es valido")
+
+            if k not in self._required_vars:
+                raise AttributeError(f"El atributo '{k}' no se encuentra")
         
         #Validamos cada argumento recibido
         # Asigna todos los valores en kwargs a las atributos con 
@@ -136,11 +145,13 @@ class Model:
         if name in self._internal_vars:
             super().__setattr__(name, value)
             return
-        #TODO
+        #TODO DONE
         # Realizar las comprabociones y gestiones necesarias
         # antes de la asignacion.
-        if(name is not self._admissible_var_) or (value is None):
-            raise AttributeError
+        vars_validos = self._required_vars | self._admissible_vars
+        
+        if name not in vars_validos:
+            raise AttributeError(f"Atributo '{name}' no permitido.")
 
         # Asigna el valor value a la variable name
         self._data[name] = value
@@ -165,16 +176,31 @@ class Model:
         actualiza el documento existente con los nuevos valores del
         modelo.
         """
-        #TODO
-        pass #No olvidar eliminar esta linea una vez implementado
+        #TODO DONE
+        #pass
+        if self._location_var and self._location_var in self._data:
+            localizacion = f"{self._location_var}_loc"
+            self._data[localizacion] = getLocationPoint(self._data[self._location_var])
 
+        if "_id" in self._data:
+            self._db.update_one({"_id": self._data["_id"]}, {"$set": self._data})
+
+        else:
+            res = self._db.insert_one(self._data)
+            self._data["_id"] = res.inserted_id
+    
     def delete(self) -> None:
         """
         Elimina el modelo de la base de datos
         """
-        #TODO
-        pass
-    
+        #TODO DONE
+        #pass
+        if "_id" in self._data:
+            self._db.delete_one({"_id": self._data["_id"]})
+            del self._data["_id"]
+        else:
+            self._db.delete_one(self._data)
+
     @classmethod
     def find(cls, filter: dict[str, str | dict]) -> Any:
         """ 
@@ -191,9 +217,11 @@ class Model:
             ModelCursor
                 cursor de modelos
         """ 
-        #TODO
+        #TODO DONE
         # cls es el puntero a la clase
-        pass #No olvidar eliminar esta linea una vez implementado
+        #pass
+        cursor = cls._db.find(filter)
+        return ModelCursor(cls, cursor)
 
     @classmethod
     def aggregate(cls, pipeline: list[dict]) -> pymongo.command_cursor.CommandCursor:
