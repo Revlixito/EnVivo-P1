@@ -241,7 +241,7 @@ class Model:
         alguna otra inicialización/comprobaciones o cambios adicionales
         que estime el alumno.
 
-        Parameters
+        Parametersb
         ----------
             db_collection : pymongo.collection.Collection
                 Conexion a la collecion de la base de datos.
@@ -263,17 +263,14 @@ class Model:
         # que _location_var debe guardar el nombre del campo base.
 
         for clave, valor in indexes.items():
-            if(clave=="unique_indexes"):
-                for i in valor:
-                    cls._db.create_index([(valor)], unique=True)
+            if(valor =="unique"):
+                cls._db.create_index([(clave, 1)], unique=True)
 
-            elif(clave=="regular_indexes"):
-                for i in valor:
-                    cls._db.create_index([(valor, 1)])
+            elif(valor=="asc"):
+                cls._db.create_index([(clave, 1)])
 
             else:
-                for i in valor:
-                    cls._db.create_index([(valor, "2dsphere")])
+                cls._db.create_index([(clave + "_loc", "2dsphere")])
 
 
 
@@ -320,7 +317,9 @@ class ModelCursor:
         Utilizar alive para comprobar si existen mas documentos.
         """
         #TODO
-        pass #No olvidar eliminar esta linea una vez implementado
+        while self._cursor.alive:
+            documento = next(self._cursor)
+            yield self._model(**documento)#No olvidar eliminar esta linea una vez implementado
 
 
 def initApp(definitions_path: str = "./models.yml", mongodb_uri="mongodb://localhost:27017/", db_name="abd", scope=globals()) -> None:
@@ -352,8 +351,6 @@ def initApp(definitions_path: str = "./models.yml", mongodb_uri="mongodb://local
     # Ejemplo de declaracion de modelo para colecion llamada MiModelo
     with open(definitions_path, "r", encoding="utf-8") as datos:
         datos = yaml.safe_load(datos) # Leemos el yml con yaml.safe_load para que lo ocnvierta en diccionario de python
-        print(datos)
-        print(type(datos))
         
         for clave, valor in datos.items():
             scope[clave] = type(clave, (Model,),{})
@@ -365,7 +362,6 @@ def initApp(definitions_path: str = "./models.yml", mongodb_uri="mongodb://local
 
             for indice in valor["regular_indexes"]:
                 indexes[indice] = "asc"
-
     # La clase se declara en tiempo de ejecucion y queda en scope, que no tiene
     # por que ser el espacio de nombres global: las pruebas le pasan su propio
     # diccionario. Por eso se inicializa a traves de scope y no por su nombre,
